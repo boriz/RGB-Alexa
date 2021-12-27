@@ -28,6 +28,7 @@ int display_mode = 0;
 uint8_t rainbow_brightness = 255;
 CRGB light_color = 0;
 CRGB light_color_new = 0;
+bool light_refresh_request = false;
 CRGB chase_color = 0;
 TaskHandle_t h_task_alexa;
 
@@ -86,7 +87,7 @@ void setup()
   espalexa.addDevice("RGB chase", Callback_ChaseColor, EspalexaDeviceType::color, 0);
   espalexa.begin();
 
-  light_color_new = CRGB(0, 0, 255);
+  light_color_new = CRGB(0, 0, 30);
     
     // Load defaults
   //prefs.begin("app_set", false);
@@ -112,11 +113,12 @@ void loop()
   if (display_mode == 0)
   {    
     // light mode
-    if (light_color != light_color_new)
+    if ( (light_color != light_color_new) || (light_refresh_request) )
     {
       Serial.println("Loop LightColor. New color");
       Light_ColorWipe(light_color_new, 10);
       light_color = light_color_new;
+      light_refresh_request = false;
     }
     
     // Update LEDs periodically just in case
@@ -159,7 +161,7 @@ void loop()
     // Wrong mode
     display_mode = 0;
   }
-
+  
   // Short delay
   delay(1);
 }
@@ -202,11 +204,12 @@ void Callback_LightColor(EspalexaDevice* d)
   Serial.printf("LightColor. Callback. Colors=Red:%d, Green:%d, Blue:%d \n", lim_r, lim_g, lim_b);
 
   // Switching on
-  if (on_command || display_mode != 0)
+  if (on_command || (display_mode != 0))
   {      
-    Serial.println("LightColor. Callback. Received Light ON command");    
+    Serial.println("LightColor. Callback. Received Light ON command");
     light_color_new = CRGB(lim_r, lim_g, lim_b);
-    display_mode = 0;    
+    light_refresh_request = true;
+    display_mode = 0;
     return;
   }
 
@@ -215,13 +218,12 @@ void Callback_LightColor(EspalexaDevice* d)
   {      
     Serial.println("LightColor. Callback. Receive Light OFF command");
     light_color_new = CRGB(0, 0, 0);
-    display_mode = 0;
+    light_refresh_request = true;
     return;     
   }
 
   // Just changing color.
   light_color_new = CRGB(lim_r, lim_g, lim_b);
-  display_mode = 0;
 }
 
 
@@ -234,6 +236,7 @@ void Callback_Rainbow(EspalexaDevice* d)
   {      
     Serial.println("Rainbow. Callback. Receive Rainbow OFF command");
     light_color_new = CRGB(0, 0, 0);
+    light_refresh_request = true;
     display_mode = 0;
     return;     
   }
@@ -264,7 +267,7 @@ void Callback_ChaseColor(EspalexaDevice* d)
   Serial.printf("ChaseColor. Callback. Colors=Red:%d, Green:%d, Blue:%d \n", lim_r, lim_g, lim_b);
 
   // Switching on
-  if (on_command || display_mode != 2)
+  if (on_command || (display_mode != 2))
   {      
     Serial.println("ChaseColor. Callback. Received Chase ON command");    
     chase_color = CRGB(lim_r, lim_g, lim_b);
@@ -277,17 +280,18 @@ void Callback_ChaseColor(EspalexaDevice* d)
   {      
     Serial.println("ChaseColor. Callback. Receive Chase OFF command");
     light_color_new = CRGB(0, 0, 0);
+    light_refresh_request = true;
     display_mode = 0;
     return;     
   }
 
   // Just changing color.
   chase_color = CRGB(lim_r, lim_g, lim_b);
-  display_mode = 2;
 }
 
 
 // ================================================================
+// Effects
 // Fill the dots one after the other with a color
 void Light_ColorWipe(CRGB c, uint8_t wait) 
 {
