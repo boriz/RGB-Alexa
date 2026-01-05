@@ -1,5 +1,5 @@
 #include <WiFi.h>
-#include <Preferences.h>
+//#include <Preferences.h>
 #include <FastLED.h>
 
 // ESP alexa library
@@ -40,6 +40,7 @@ TaskHandle_t h_task_alexa;
 /*************************** Sketch Code ************************************/
 void setup() 
 {
+  delay(1000);
   Serial.begin(115200);
   Serial.println();
   Serial.println("Setup start");
@@ -163,7 +164,7 @@ void loop()
   }
   
   // Short delay
-  delay(1);
+  delay(10);
 }
 
 
@@ -176,7 +177,7 @@ void Task_Alexa (void * parameter)
   while (true)
   {
     espalexa.loop();
-    delay(1);
+    delay(10);
   }
 }
 
